@@ -1,0 +1,40 @@
+{
+  "_comment": "Illustrative reconciliation output for samples/sample_statement.csv reconciled against the V6 sample data seeded by Flyway. Regenerate by following the walkthrough in README.md. This file is a representative example, not a live capture.",
+  "import": {
+    "importId": 1,
+    "fileName": "sample_statement.csv",
+    "status": "COMPLETED",
+    "totalRows": 13,
+    "acceptedRows": 10,
+    "rejectedRows": 2,
+    "duplicateRows": 1
+  },
+  "reconciliationRun": {
+    "id": 1,
+    "importId": 1,
+    "status": "COMPLETED",
+    "totalItems": 13,
+    "matched": 7,
+    "missingInternal": 1,
+    "missingExternal": 0,
+    "amountMismatch": 1,
+    "typeMismatch": 1,
+    "duplicateExternal": 1,
+    "invalidExternal": 2
+  },
+  "items": [
+    { "matchStatus": "MATCHED", "externalRef": "TXN-REF-001", "externalAmount": 50000.0000, "internalAmount": 50000.0000, "externalType": "DEPOSIT", "internalType": "DEPOSIT", "discrepancyDetail": null },
+    { "matchStatus": "MATCHED", "externalRef": "TXN-REF-002", "externalAmount": 150000.0000, "internalAmount": 150000.0000, "externalType": "DEPOSIT", "internalType": "DEPOSIT", "discrepancyDetail": null },
+    { "matchStatus": "MATCHED", "externalRef": "TXN-REF-003", "externalAmount": 25000.0000, "internalAmount": 25000.0000, "externalType": "WITHDRAWAL", "internalType": "WITHDRAWAL", "discrepancyDetail": null },
+    { "matchStatus": "MATCHED", "externalRef": "TXN-REF-004", "externalAmount": 30000.0000, "internalAmount": 30000.0000, "externalType": "DEPOSIT", "internalType": "DEPOSIT", "discrepancyDetail": null },
+    { "matchStatus": "MATCHED", "externalRef": "TXN-REF-005", "externalAmount": 5000.0000, "internalAmount": 5000.0000, "externalType": "WITHDRAWAL", "internalType": "WITHDRAWAL", "discrepancyDetail": null },
+    { "matchStatus": "MATCHED", "externalRef": "TXN-REF-006", "externalAmount": 5000.0000, "internalAmount": 5000.0000, "externalType": "DEPOSIT", "internalType": "DEPOSIT", "discrepancyDetail": null },
+    { "matchStatus": "MATCHED", "externalRef": "TXN-REF-007", "externalAmount": 75000.0000, "internalAmount": 75000.0000, "externalType": "DEPOSIT", "internalType": "DEPOSIT", "discrepancyDetail": null },
+    { "matchStatus": "MISSING_INTERNAL", "externalRef": "EXT-ONLY-001", "externalAmount": 12000.0000, "internalAmount": null, "externalType": "DEPOSIT", "internalType": null, "discrepancyDetail": "No internal transaction found for external ref: EXT-ONLY-001" },
+    { "matchStatus": "DUPLICATE_EXTERNAL", "externalRef": "TXN-REF-003", "externalAmount": 99999.0000, "internalAmount": null, "externalType": "WITHDRAWAL", "internalType": null, "discrepancyDetail": "Duplicate external reference: TXN-REF-003" },
+    { "matchStatus": "TYPE_MISMATCH", "externalRef": "TXN-REF-009", "externalAmount": 2000.0000, "internalAmount": 2000.0000, "externalType": "DEPOSIT", "internalType": "WITHDRAWAL", "discrepancyDetail": "Type mismatch: external=DEPOSIT, internal=WITHDRAWAL" },
+    { "matchStatus": "AMOUNT_MISMATCH", "externalRef": "TXN-REF-010", "externalAmount": 7500.0000, "internalAmount": 5000.0000, "externalType": "WITHDRAWAL", "internalType": "WITHDRAWAL", "discrepancyDetail": "Amount mismatch: external=7500.0000, internal=5000.0000" },
+    { "matchStatus": "INVALID_EXTERNAL", "externalRef": null, "externalAmount": 1000.0000, "internalAmount": null, "externalType": "DEPOSIT", "internalType": null, "discrepancyDetail": "Entry was rejected during import: external_ref is empty" },
+    { "matchStatus": "INVALID_EXTERNAL", "externalRef": "INVALID-ROW", "externalAmount": null, "internalAmount": null, "externalType": "INVALID_TYPE", "internalType": null, "discrepancyDetail": "Entry was rejected during import: transaction_type must be DEPOSIT or WITHDRAWAL, got: INVALID_TYPE; amount must be positive, got: -500; Invalid timestamp format: bad-timestamp (expected yyyy-MM-dd HH:mm:ss)" }
+  ]
+}

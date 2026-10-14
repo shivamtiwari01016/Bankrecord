@@ -1,0 +1,382 @@
+{
+  "info": {
+    "_postman_id": "b1a2c3d4-0000-4000-8000-bankrecon0001",
+    "name": "BankRecon API",
+    "description": "Representative success and failure cases for the BankRecon API.\n\nBase URL is the {{baseUrl}} collection variable (default http://localhost:8080). Run 'Create Account' first, then use its returned id in the transaction requests. For the reconciliation folder, import samples/sample_statement.csv first and use the returned importId.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "accountId", "value": "1" },
+    { "key": "importId", "value": "1" },
+    { "key": "runId", "value": "1" },
+    { "key": "idempotencyKey", "value": "dep-demo-001" }
+  ],
+  "item": [
+    {
+      "name": "Accounts",
+      "item": [
+        {
+          "name": "Create Account (success)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 201\", function () { pm.response.to.have.status(201); });",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set(\"accountId\", body.id);",
+                  "pm.test(\"Response has account number\", function () { pm.expect(body.accountNumber).to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"holderName\": \"Alice Sharma\",\n  \"accountType\": \"SAVINGS\",\n  \"currency\": \"INR\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/v1/accounts", "host": ["{{baseUrl}}"], "path": ["api", "v1", "accounts"] }
+          }
+        },
+        {
+          "name": "Create Account (validation failure)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test(\"Status is 400\", function () { pm.response.to.have.status(400); });"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"holderName\": \"\",\n  \"accountType\": \"SAVINGS\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/accounts", "host": ["{{baseUrl}}"], "path": ["api", "v1", "accounts"] }
+          }
+        },
+        {
+          "name": "Get Account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test(\"Status is 200\", function () { pm.response.to.have.status(200); });"]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/accounts/{{accountId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "accounts", "{{accountId}}"] }
+          }
+        },
+        {
+          "name": "List Accounts (paged)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/accounts?page=0&size=20", "host": ["{{baseUrl}}"], "path": ["api", "v1", "accounts"], "query": [{ "key": "page", "value": "0" }, { "key": "size", "value": "20" }] }
+          }
+        },
+        {
+          "name": "Account Transaction History",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/accounts/{{accountId}}/transactions", "host": ["{{baseUrl}}"], "path": ["api", "v1", "accounts", "{{accountId}}", "transactions"] }
+          }
+        },
+        {
+          "name": "Get Account (not found)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test(\"Status is 404\", function () { pm.response.to.have.status(404); });"]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/accounts/999999", "host": ["{{baseUrl}}"], "path": ["api", "v1", "accounts", "999999"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transactions",
+      "item": [
+        {
+          "name": "Deposit (success)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test(\"Status is 201\", function () { pm.response.to.have.status(201); });"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 5000.0000,\n  \"description\": \"Initial deposit\",\n  \"transactionRef\": \"TXN-DEMO-DEP-001\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/accounts/{{accountId}}/transactions/deposit", "host": ["{{baseUrl}}"], "path": ["api", "v1", "accounts", "{{accountId}}", "transactions", "deposit"] }
+          }
+        },
+        {
+          "name": "Deposit (idempotent retry - same response)",
+          "description": "Send the exact same body and Idempotency-Key again. The stored response is returned and no new transaction is created.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test(\"Status is 201\", function () { pm.response.to.have.status(201); });"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 5000.0000,\n  \"description\": \"Initial deposit\",\n  \"transactionRef\": \"TXN-DEMO-DEP-001\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/accounts/{{accountId}}/transactions/deposit", "host": ["{{baseUrl}}"], "path": ["api", "v1", "accounts", "{{accountId}}", "transactions", "deposit"] }
+          }
+        },
+        {
+          "name": "Deposit (conflicting idempotency key)",
+          "description": "Reuse the same Idempotency-Key with a different amount -> 409 Conflict.",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test(\"Status is 409\", function () { pm.response.to.have.status(409); });"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 99999.0000,\n  \"description\": \"Different payload\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/accounts/{{accountId}}/transactions/deposit", "host": ["{{baseUrl}}"], "path": ["api", "v1", "accounts", "{{accountId}}", "transactions", "deposit"] }
+          }
+        },
+        {
+          "name": "Withdrawal (success)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test(\"Status is 201\", function () { pm.response.to.have.status(201); });"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 1000.0000,\n  \"description\": \"ATM withdrawal\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/accounts/{{accountId}}/transactions/withdrawal", "host": ["{{baseUrl}}"], "path": ["api", "v1", "accounts", "{{accountId}}", "transactions", "withdrawal"] }
+          }
+        },
+        {
+          "name": "Withdrawal (insufficient funds)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": ["pm.test(\"Status is 422\", function () { pm.response.to.have.status(422); });"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 99999999.0000,\n  \"description\": \"Too much\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/accounts/{{accountId}}/transactions/withdrawal", "host": ["{{baseUrl}}"], "path": ["api", "v1", "accounts", "{{accountId}}", "transactions", "withdrawal"] }
+          }
+        },
+        {
+          "name": "Get Transaction by ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/transactions/1", "host": ["{{baseUrl}}"], "path": ["api", "v1", "transactions", "1"] }
+          }
+        },
+        {
+          "name": "Get Transaction by Reference",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/transactions/ref/TXN-DEMO-DEP-001", "host": ["{{baseUrl}}"], "path": ["api", "v1", "transactions", "ref", "TXN-DEMO-DEP-001"] }
+          }
+        },
+        {
+          "name": "Filter Transactions",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/transactions?accountId={{accountId}}&type=DEPOSIT",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "transactions"],
+              "query": [
+                { "key": "accountId", "value": "{{accountId}}" },
+                { "key": "type", "value": "DEPOSIT" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reconciliation",
+      "item": [
+        {
+          "name": "Import Statement CSV",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 201\", function () { pm.response.to.have.status(201); });",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set(\"importId\", body.importId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "body": { "mode": "formdata", "formdata": [{ "key": "file", "type": "file", "src": "samples/sample_statement.csv" }] },
+            "url": { "raw": "{{baseUrl}}/api/v1/reconciliation/import", "host": ["{{baseUrl}}"], "path": ["api", "v1", "reconciliation", "import"] }
+          }
+        },
+        {
+          "name": "Run Reconciliation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 201\", function () { pm.response.to.have.status(201); });",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set(\"runId\", body.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"importId\": {{importId}}\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/reconciliation/runs", "host": ["{{baseUrl}}"], "path": ["api", "v1", "reconciliation", "runs"] }
+          }
+        },
+        {
+          "name": "Get Reconciliation Run",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/reconciliation/runs/{{runId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "reconciliation", "runs", "{{runId}}"] }
+          }
+        },
+        {
+          "name": "List Discrepancies",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reconciliation/discrepancies?runId={{runId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "reconciliation", "discrepancies"],
+              "query": [{ "key": "runId", "value": "{{runId}}" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "Daily Summary",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reports/daily-summary?from=2026-10-01T00:00:00&to=2026-10-31T23:59:59",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "reports", "daily-summary"],
+              "query": [
+                { "key": "from", "value": "2026-10-01T00:00:00" },
+                { "key": "to", "value": "2026-10-31T23:59:59" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Deposit / Withdrawal Summary",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reports/deposit-withdrawal-summary?from=2026-10-01T00:00:00&to=2026-10-31T23:59:59",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "reports", "deposit-withdrawal-summary"],
+              "query": [
+                { "key": "from", "value": "2026-10-01T00:00:00" },
+                { "key": "to", "value": "2026-10-31T23:59:59" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Status Summary",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/reports/status-summary", "host": ["{{baseUrl}}"], "path": ["api", "v1", "reports", "status-summary"] }
+          }
+        },
+        {
+          "name": "Top Accounts",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reports/account-activity?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "reports", "account-activity"],
+              "query": [{ "key": "limit", "value": "10" }]
+            }
+          }
+        },
+        {
+          "name": "Failed Transactions",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/reports/failed-transactions", "host": ["{{baseUrl}}"], "path": ["api", "v1", "reports", "failed-transactions"] }
+          }
+        },
+        {
+          "name": "Duplicate References",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/reports/duplicate-refs", "host": ["{{baseUrl}}"], "path": ["api", "v1", "reports", "duplicate-refs"] }
+          }
+        }
+      ]
+    }
+  ]
+}
